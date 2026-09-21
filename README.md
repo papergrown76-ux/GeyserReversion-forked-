@@ -1,4 +1,7 @@
 # GeyserReversion
+
+## ARCHIVED FOR NOW.
+
 - Inspired by https://github.com/bundabrg/GeyserReversion, entirely different codebase tho uhhh
 - The "library" used for translating stuff is a fork of [Ouranos](https://github.com/Blackjack200/Ouranos) aka https://github.com/oryxel1/Ouranos 
 - Currently, support: latest -> 1.12.0 (yeh)
