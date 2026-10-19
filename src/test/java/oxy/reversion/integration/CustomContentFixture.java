@@ -17,6 +17,8 @@ import org.geysermc.geyser.api.extension.Extension;
 import org.geysermc.geyser.registry.BlockRegistries;
 import oxy.reversion.user.ReversionUser;
 import oxy.reversion.util.registry.ServerBlockPalette;
+import oxy.reversion.config.Config;
+import oxy.reversion.config.FallbackConfig;
 
 import java.util.List;
 import java.util.Arrays;
@@ -42,7 +44,7 @@ public class CustomContentFixture implements Extension {
             if (customStates != 4) {
                 throw new AssertionError("Expected four registered custom block states, got " + customStates);
             }
-            var user = new ReversionUser(898, 944, null);
+            var user = new ReversionUser(898, 944, null, new Config());
             user.setServerBlockDictionary(ServerBlockPalette.fromMappings(mappings));
             var start = new StartGamePacket();
             for (var property : mappings.getBlockProperties()) {
@@ -77,6 +79,27 @@ public class CustomContentFixture implements Extension {
             if (!block.identifier().equals(translated.getDefinition().getIdentifier())) {
                 throw new AssertionError("Runtime CustomItem transformer did not preserve the custom item");
             }
+            var fallback = new ReversionUser(898, 944, null,
+                    new Config(new FallbackConfig(true, 924, "minecraft:gold_block")));
+            fallback.setServerBlockDictionary(user.getServerBlockDictionary());
+            var fallbackStart = new StartGamePacket();
+            for (var property : mappings.getBlockProperties()) {
+                fallbackStart.getBlockProperties().add(new BlockPropertyData(property.getName(), property.getProperties()));
+            }
+            var outputStart = (StartGamePacket) fallback.translateClientbound(fallbackStart);
+            if (!outputStart.getBlockProperties().isEmpty()) throw new AssertionError("Unsupported custom definitions still announced");
+            var customState = dictionary.getKnownStates().stream().filter(s -> s.name().equals(block.identifier())).findFirst().orElseThrow();
+            int serverId = dictionary.toRuntimeId(customState.latestStateHash());
+            int clientId = TypeConverter.translateBlockRuntimeId(fallback, 944, 898, serverId);
+            if (!"minecraft:gold_block".equals(fallback.get(BlockDictionaryStorage.class).get(898).toBlockState(clientId).name())) {
+                throw new AssertionError("Runtime block fallback did not use the replacement palette");
+            }
+            var blockItem = item.toBuilder().blockDefinition(fallback.getServerCodecHelper().getBlockDefinitions().getDefinition(serverId)).build();
+            var itemView = TypeConverter.translateItemData(fallback, 944, 898, blockItem);
+            if (!"minecraft:gold_block".equals(itemView.getDefinition().getIdentifier())) throw new AssertionError("Block item was not replaced");
+            var restored = TypeConverter.translateItemData(fallback, 898, 944, itemView);
+            if (!block.identifier().equals(restored.getDefinition().getIdentifier())) throw new AssertionError("Original custom item not restored");
+            logger().info("FALLBACK_SMOKE_PASS: palette filtering, block IDs and server-issued item restoration verified");
             logger().info("CUSTOM_CONTENT_SMOKE_PASS: " + palette.length + " states match; custom item transformer active");
         } catch (Throwable failure) {
             logger().severe("CUSTOM_CONTENT_SMOKE_FAIL", failure);

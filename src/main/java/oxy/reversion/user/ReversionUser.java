@@ -16,6 +16,9 @@ import org.geysermc.geyser.session.GeyserSession;
 import oxy.reversion.GeyserReversion;
 import oxy.reversion.util.protocol.ProtocolSet;
 import oxy.reversion.util.registry.SessionBlockDefinitionRegistry;
+import oxy.reversion.config.Config;
+import oxy.reversion.diagnostics.TranslationDiagnostics;
+import oxy.reversion.fallback.BlockFallbacks;
 
 @Getter @Setter
 public class ReversionUser extends SpecialOuranosSession {
@@ -28,6 +31,8 @@ public class ReversionUser extends SpecialOuranosSession {
     private final BedrockCodecHelper cloudburstServerCodecHelper;
 
     private boolean authenticated;
+    private final TranslationDiagnostics diagnostics;
+    private final BlockFallbacks fallbacks;
 
     private BlockStateDictionary.Dictionary serverBlockDictionary;
 
@@ -37,8 +42,16 @@ public class ReversionUser extends SpecialOuranosSession {
     }
 
     public ReversionUser(int protocolVersion, int serverVersion, GeyserSession session) {
+        this(protocolVersion, serverVersion, session, GeyserReversion.config());
+    }
+
+    public ReversionUser(int protocolVersion, int serverVersion, GeyserSession session, Config config) {
         super(protocolVersion, serverVersion);
         this.session = session;
+        this.diagnostics = new TranslationDiagnostics(config.debugMode(), config.diagnosticsLogIntervalSeconds(), message -> {
+            if (GeyserReversion.extensionlogger() != null) GeyserReversion.extensionlogger().warning(message);
+        });
+        this.fallbacks = new BlockFallbacks(this, config.fallbacks());
 
         this.cloudburstClientCodec = ProtocolSet.getPacketCodec(protocolVersion);
         this.cloudburstServerCodec = ProtocolSet.getPacketCodec(serverVersion);
@@ -78,7 +91,8 @@ public class ReversionUser extends SpecialOuranosSession {
 
             this.encodeClient(bedrockPacket, input);
             packet = this.decodeClient(input, this.getClientCodec().getPacketDefinition(bedrockPacket.getClass()).getId());
-        }  catch (Exception ignored) {
+        } catch (Exception failure) {
+            diagnostics.failure("generated-clientbound", bedrockPacket.getClass().getSimpleName(), getProtocolId(), getTargetVersion(), "", failure);
         } finally {
             input.release();
         }
@@ -99,7 +113,8 @@ public class ReversionUser extends SpecialOuranosSession {
 
             this.encodeServer(bedrockPacket, input);
             packet = this.decodeServer(input, this.getServerCodec().getPacketDefinition(bedrockPacket.getClass()).getId());
-        }  catch (Exception ignored) {
+        } catch (Exception failure) {
+            diagnostics.failure("generated-serverbound", bedrockPacket.getClass().getSimpleName(), getProtocolId(), getTargetVersion(), "", failure);
         } finally {
             input.release();
         }

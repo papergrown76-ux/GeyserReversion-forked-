@@ -7,6 +7,7 @@ import org.geysermc.geyser.session.GeyserSession;
 import oxy.reversion.handler.ReversionHandlerAdaptor;
 import oxy.reversion.handler.SpoofedUpstreamHandler;
 import oxy.reversion.user.ReversionUser;
+import oxy.reversion.GeyserReversion;
 
 import java.lang.reflect.Field;
 
@@ -19,7 +20,9 @@ public class GeyserHookUtil {
                     new ReversionHandlerAdaptor(user, (BedrockPacketCodec) channel.pipeline().get(BedrockPacketCodec.NAME)));
 
             injectCloudburstUpstream(user.getSession(), session);
-        } catch (Exception ignored) {
+            GeyserReversion.track(user);
+        } catch (Exception failure) {
+            user.getDiagnostics().failure("hook", "pipeline", user.getProtocolId(), user.getTargetVersion(), "", failure);
             user.getSession().disconnect("Failed to hook into bedrock channel pipeline!");
         }
     }

@@ -13,6 +13,7 @@ import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket;
 import oxy.reversion.user.ReversionUser;
 import oxy.reversion.util.protocol.PacketTranslatorUtil;
 import oxy.reversion.util.registry.RegistryUtil;
+import oxy.reversion.diagnostics.PacketDiagnostics;
 
 import java.util.List;
 
@@ -50,7 +51,8 @@ public class ReversionHandlerAdaptor extends MessageToMessageCodec<BedrockPacket
 
             msg.setPacketBuffer(buf.retain());
             out.add(msg.retain());
-        } catch (Exception ignored) {
+        } catch (Exception failure) {
+            PacketDiagnostics.failure(user, "encode-clientbound", packet, failure);
         } finally {
             buf.release();
         }

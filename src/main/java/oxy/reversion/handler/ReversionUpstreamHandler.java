@@ -172,7 +172,7 @@ public class ReversionUpstreamHandler extends UpstreamPacketHandler {
         // Earlier clients cannot receive custom block definitions. Their vanilla palette
         // would also be wrong once custom states shift the server's runtime IDs.
         if (protocolVersion < Bedrock_v419.CODEC.getProtocolVersion()
-                && BlockRegistries.CUSTOM_BLOCKS.get().length != 0) {
+                && BlockRegistries.CUSTOM_BLOCKS.get().length != 0 && !GeyserReversion.config().fallbacks().enabled()) {
             session.getUpstream().getSession().setCodec(BedrockCompat.disconnectCompat(protocolVersion));
             session.disconnect(GeyserReversion.config().customBlocksNotSupportedKick());
             return false;

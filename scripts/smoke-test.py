@@ -11,11 +11,13 @@ import subprocess
 import tempfile
 import time
 from urllib.parse import urlsplit
+from zipfile import ZipFile
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--geyser-jar", required=True, type=Path)
+    parser.add_argument("--fallbacks", action="store_true", help="Enable the host's global fallback configuration")
     args = parser.parse_args()
     geyser = args.geyser_jar.resolve()
     expected = "ab1faf71f02655fcc35d41459eb8aaac6467e91890af4bb3963dcec8a0ec461b"
@@ -47,6 +49,15 @@ def main():
         (root / "extensions").mkdir()
         shutil.copy2(release, root / "extensions/geyserreversion.jar")
         shutil.copy2(fixture, root / "extensions/custom-content-fixture.jar")
+        if args.fallbacks:
+            settings = root / "extensions/geyser-reversion"
+            settings.mkdir(parents=True, exist_ok=True)
+            with ZipFile(release) as jar:
+                config = jar.read("config.yml").decode()
+            config = config.replace("  enabled: false", "  enabled: true", 1)
+            config = config.replace("  minimum-client-protocol: 419", "  minimum-client-protocol: 924", 1)
+            config = config.replace("  default-block: minecraft:stone", "  default-block: minecraft:gold_block", 1)
+            (settings / "config.yml").write_text(config)
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.bind(("127.0.0.1", 0))
             port = probe.getsockname()[1]
@@ -76,7 +87,7 @@ notify-on-new-bedrock-update: false
                     output = log_path.read_text(errors="replace")
                     if process.poll() is not None or "CUSTOM_CONTENT_SMOKE_FAIL" in output:
                         raise RuntimeError("Geyser custom-content startup failed; see build/reports/smoke-test.log")
-                    if "CUSTOM_CONTENT_SMOKE_PASS" in output and "Done (" in output:
+                    if "CUSTOM_CONTENT_SMOKE_PASS" in output and "FALLBACK_SMOKE_PASS" in output and "Done (" in output:
                         break
                     time.sleep(0.2)
                 else:
@@ -93,7 +104,18 @@ notify-on-new-bedrock-update: false
                 motd = pong[35:35 + length].decode()
                 if "Reversion compatibility smoke test" not in motd or ";975;" not in motd:
                     raise RuntimeError("Unexpected Bedrock response: " + motd)
-                print("PASS: Geyser startup, custom block palette, runtime item transformer and Bedrock ping")
+                process.stdin.write("reversion status\n")
+                process.stdin.flush()
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline:
+                    status = log_path.read_text(errors="replace")
+                    expected_fallbacks = "Fallbacks: " + ("enabled" if args.fallbacks else "disabled")
+                    if "[Reversion status]" in status and "Players: 0 | Translated: 0 | Native: 0" in status and expected_fallbacks in status:
+                        break
+                    time.sleep(0.2)
+                else:
+                    raise RuntimeError("/reversion status did not return the expected report")
+                print("PASS: Geyser compatibility, custom palette, fallback blocks/items, /reversion status and Bedrock ping")
                 print(motd)
             finally:
                 if process.poll() is None:

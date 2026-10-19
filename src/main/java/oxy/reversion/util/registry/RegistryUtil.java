@@ -19,6 +19,8 @@ public class RegistryUtil {
     }
 
     public static void onItemComponent(final ReversionUser user, final ItemComponentPacket packet) {
+        user.getFallbacks().registerBlockNames(user.getSession().getBlockMappings().getBlockProperties()
+                .stream().map(p -> p.getName()).toList());
         {
             SimpleDefinitionRegistry.Builder<ItemDefinition> builder = SimpleDefinitionRegistry.<ItemDefinition>builder()
                     .add(new SimpleItemDefinition("minecraft:empty", 0, false));

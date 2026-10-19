@@ -1,6 +1,29 @@
 # Print out errors and other stuff to the console, should not be enabled unless you do need to debug something.
 debug-mode: false
 
+# Log each packet/stage error at most once per interval and connection. Counters remain
+# available in /reversion status when debug-mode is false. Payloads/authentication data are not logged.
+diagnostics-log-interval-seconds: 30
+
+# The bridge is validated against Geyser 2.10.0 build 1162. Other Geyser API families
+# keep their native listener; this opt-in permits attempting the bridge on an untested family.
+allow-untested-geyser: false
+
+# Visual replacements for translated clients. Native Geyser clients use Geyser's own handling.
+# For clients below minimum-client-protocol, custom definitions are hidden and replaced.
+# A replacement absent from an older client's palette falls back to minecraft:stone.
+# Java-side block behavior and drops are unchanged; resource-pack assets are not downgraded.
+custom-block-fallbacks:
+  enabled: false
+  minimum-client-protocol: 419
+  default-block: minecraft:stone
+  blocks: {}
+  # Example:
+  # blocks:
+  #   geyser_custom:my_custom_ore:
+  #     minimum-client-protocol: 898
+  #     block: minecraft:gold_ore
+
 # Protocol version that is blocked, this IS NOT minecraft but protocol version, If you want to check for example
 # what protocol id for 1.21.80 is, go on https://minecraft.wiki and search up "Bedrock <version>" and check "Protocol version"
 # Then add it here, if this list is empty, all version can join (if it's supported).
@@ -21,7 +44,8 @@ version-not-supported-kick: "Your version is outdated, please update!"
 block-protocol-kick: "Your version of Minecraft is blocked by the server! Please contact the server admin if you think this is a mistake!"
 
 # Clients older than 1.16.100 cannot receive custom block definitions. They can still join
-# servers without custom blocks; servers registering custom blocks reject them with this message.
+# servers without custom blocks; custom-block servers reject them with this message unless
+# custom-block-fallbacks.enabled replaces unsupported definitions with vanilla blocks.
 custom-blocks-not-supported-kick: "This server uses custom blocks. Please use Minecraft Bedrock 1.16.100 or newer."
 
 # This is meant for versions below 1.20 where auth is broken, and it's required for us to send an auth request for them to log in.
