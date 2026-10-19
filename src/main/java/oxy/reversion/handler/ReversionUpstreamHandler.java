@@ -5,6 +5,7 @@ import com.github.blackjack200.ouranos.shaded.protocol.bedrock.codec.v589.Bedroc
 import net.raphimc.minecraftauth.bedrock.model.MinecraftMultiplayerToken;
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
 import org.cloudburstmc.protocol.bedrock.codec.compat.BedrockCompat;
+import org.cloudburstmc.protocol.bedrock.codec.v419.Bedrock_v419;
 import org.cloudburstmc.protocol.bedrock.codec.v544.Bedrock_v544;
 import org.cloudburstmc.protocol.bedrock.codec.v575.Bedrock_v575;
 import org.cloudburstmc.protocol.bedrock.data.PacketCompressionAlgorithm;
@@ -13,6 +14,7 @@ import org.cloudburstmc.protocol.common.PacketSignal;
 import org.geysermc.geyser.GeyserImpl;
 import org.geysermc.geyser.api.event.bedrock.SessionInitializeEvent;
 import org.geysermc.geyser.network.GameProtocol;
+import org.geysermc.geyser.registry.BlockRegistries;
 import org.geysermc.geyser.session.GeyserSession;
 import org.geysermc.geyser.session.auth.AuthData;
 import oxy.reversion.GeyserReversion;
@@ -167,6 +169,14 @@ public class ReversionUpstreamHandler extends UpstreamPacketHandler {
     }
 
     private boolean isSupported(int protocolVersion) {
+        // Earlier clients cannot receive custom block definitions. Their vanilla palette
+        // would also be wrong once custom states shift the server's runtime IDs.
+        if (protocolVersion < Bedrock_v419.CODEC.getProtocolVersion()
+                && BlockRegistries.CUSTOM_BLOCKS.get().length != 0) {
+            session.getUpstream().getSession().setCodec(BedrockCompat.disconnectCompat(protocolVersion));
+            session.disconnect(GeyserReversion.config().customBlocksNotSupportedKick());
+            return false;
+        }
         int minProtocolVer = GeyserReversion.config().minProtocolId();
         if (!GeyserReversion.doWeSupportBelow575()) {
             minProtocolVer = Math.max(Bedrock_v575.CODEC.getProtocolVersion(), minProtocolVer);

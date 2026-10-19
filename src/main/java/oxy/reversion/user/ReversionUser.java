@@ -1,6 +1,7 @@
 package oxy.reversion.user;
 
 import com.github.blackjack200.ouranos.session.SpecialOuranosSession;
+import com.github.blackjack200.ouranos.converter.BlockStateDictionary;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import lombok.Getter;
@@ -14,6 +15,7 @@ import org.geysermc.geyser.registry.Registries;
 import org.geysermc.geyser.session.GeyserSession;
 import oxy.reversion.GeyserReversion;
 import oxy.reversion.util.protocol.ProtocolSet;
+import oxy.reversion.util.registry.SessionBlockDefinitionRegistry;
 
 @Getter @Setter
 public class ReversionUser extends SpecialOuranosSession {
@@ -26,6 +28,8 @@ public class ReversionUser extends SpecialOuranosSession {
     private final BedrockCodecHelper cloudburstServerCodecHelper;
 
     private boolean authenticated;
+
+    private BlockStateDictionary.Dictionary serverBlockDictionary;
 
     public void setAuthenticated(boolean authenticated) {
         this.authenticated = authenticated;
@@ -54,6 +58,15 @@ public class ReversionUser extends SpecialOuranosSession {
             }
         });
         this.cloudburstServerCodecHelper.setBlockDefinitions(this.cloudburstClientCodecHelper.getBlockDefinitions());
+        setHashedBlockIds(false);
+    }
+
+    @Override
+    public void setHashedBlockIds(boolean hashedBlockIds) {
+        super.setHashedBlockIds(hashedBlockIds);
+        // Ouranos resets these at StartGame. Keep resolving against its per-session palette.
+        getClientCodecHelper().setBlockDefinitions(new SessionBlockDefinitionRegistry(this, getProtocolId()));
+        getServerCodecHelper().setBlockDefinitions(new SessionBlockDefinitionRegistry(this, getTargetVersion()));
     }
 
     @Override
@@ -85,7 +98,7 @@ public class ReversionUser extends SpecialOuranosSession {
         try {
 
             this.encodeServer(bedrockPacket, input);
-            packet = this.decodeServer(input, this.getClientCodec().getPacketDefinition(bedrockPacket.getClass()).getId());
+            packet = this.decodeServer(input, this.getServerCodec().getPacketDefinition(bedrockPacket.getClass()).getId());
         }  catch (Exception ignored) {
         } finally {
             input.release();

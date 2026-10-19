@@ -9,6 +9,15 @@ import org.cloudburstmc.protocol.common.SimpleDefinitionRegistry;
 import oxy.reversion.user.ReversionUser;
 
 public class RegistryUtil {
+    public static void onStartGame(final ReversionUser user) {
+        user.setServerBlockDictionary(ServerBlockPalette.fromMappings(user.getSession().getBlockMappings()));
+        // Serverbound packets must recover Geyser's canonical definition objects.
+        user.getCloudburstServerCodecHelper().setBlockDefinitions(user.getSession().getBlockMappings());
+        // Geyser initially configures this helper with server IDs; the wire uses client IDs.
+        user.getSession().getUpstream().getCodecHelper()
+                .setBlockDefinitions(user.getCloudburstClientCodecHelper().getBlockDefinitions());
+    }
+
     public static void onItemComponent(final ReversionUser user, final ItemComponentPacket packet) {
         {
             SimpleDefinitionRegistry.Builder<ItemDefinition> builder = SimpleDefinitionRegistry.<ItemDefinition>builder()

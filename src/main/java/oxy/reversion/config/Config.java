@@ -20,6 +20,8 @@ public final class Config {
     private String versionNotSupportedKick;
     @JsonProperty("block-protocol-kick")
     private String blockedProtocolKick;
+    @JsonProperty("custom-blocks-not-supported-kick")
+    private String customBlocksNotSupportedKick = "This server uses custom blocks. Please use Minecraft Bedrock 1.16.100 or newer.";
     @JsonProperty("timeout-seconds")
     @JsonSetter(nulls = Nulls.SKIP)
     private int timeoutSeconds = 120;
@@ -46,6 +48,10 @@ public final class Config {
 
     public String blockedProtocolKick() {
         return blockedProtocolKick;
+    }
+
+    public String customBlocksNotSupportedKick() {
+        return customBlocksNotSupportedKick;
     }
 
     public int timeoutSeconds() {

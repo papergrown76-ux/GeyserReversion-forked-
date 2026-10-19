@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "oxy.reversion"
-version = "2.0"
+version = "2.1"
 
 repositories {
     mavenCentral()
@@ -36,6 +36,25 @@ dependencies {
     compileOnly("org.cloudburstmc.netty:netty-transport-raknet:1.1.0.CR1-SNAPSHOT")
 
     implementation(files("libs/ouranos-1.0-all.jar"))
+
+    testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
+    testImplementation("org.geysermc.geyser:core:2.10.0-SNAPSHOT")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+}
+
+tasks.test {
+    useJUnitPlatform()
+    maxHeapSize = "1g"
+}
+
+tasks.register<Jar>("customContentFixtureJar") {
+    dependsOn(tasks.testClasses)
+    archiveFileName = "custom-content-fixture.jar"
+    destinationDirectory = layout.buildDirectory.dir("smoke-test")
+    from(sourceSets.test.get().output) {
+        include("oxy/reversion/integration/CustomContentFixture.class")
+    }
+    from("src/test/resources/custom-content-fixture")
 }
 
 tasks.shadowJar {
@@ -78,6 +97,6 @@ modrinth {
         if (it) releaseNotes.readText() else ""
     })
 
-    gameVersions = listOf("1.21.11");
+    gameVersions = listOf("26.2", "26.20", "26.21", "26.22", "26.23");
     loaders = listOf("geyser")
 }

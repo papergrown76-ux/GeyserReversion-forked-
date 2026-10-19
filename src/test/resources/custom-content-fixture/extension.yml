@@ -1,0 +1,9 @@
+id: reversion-custom-content-fixture
+name: ReversionCustomContentFixture
+main: oxy.reversion.integration.CustomContentFixture
+api: 2.9.10
+version: 1.0
+authors: [GeyserReversion]
+dependencies:
+  geyser-reversion:
+    required: true

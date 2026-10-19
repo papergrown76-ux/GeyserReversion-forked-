@@ -1,7 +1,6 @@
 package oxy.reversion.util.protocol;
 
 import org.cloudburstmc.protocol.bedrock.codec.BedrockCodec;
-import org.cloudburstmc.protocol.bedrock.codec.BedrockCodecHelper;
 import org.cloudburstmc.protocol.bedrock.codec.v361.Bedrock_v361;
 import org.cloudburstmc.protocol.bedrock.codec.v388.Bedrock_v388;
 import org.cloudburstmc.protocol.bedrock.codec.v389.Bedrock_v389;
@@ -56,7 +55,7 @@ import org.cloudburstmc.protocol.bedrock.codec.v860.Bedrock_v860;
 import org.cloudburstmc.protocol.bedrock.codec.v898.Bedrock_v898;
 import org.cloudburstmc.protocol.bedrock.codec.v924.Bedrock_v924;
 import org.cloudburstmc.protocol.bedrock.codec.v944.Bedrock_v944;
-import org.cloudburstmc.protocol.bedrock.data.EncodingSettings;
+import org.cloudburstmc.protocol.bedrock.codec.v975.Bedrock_v975;
 
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -75,12 +74,11 @@ public class ProtocolSet {
     }
 
     public static void addPacketCodec(BedrockCodec packetCodec) {
-        BedrockCodecHelper helper = packetCodec.createHelper();
-        helper.setEncodingSettings(EncodingSettings.builder().maxListSize(Integer.MAX_VALUE).maxByteArraySize(Integer.MAX_VALUE).maxNetworkNBTSize(Integer.MAX_VALUE).maxItemNBTSize(Integer.MAX_VALUE).maxStringLength(Integer.MAX_VALUE).build());
-        PACKET_CODECS.add(packetCodec.toBuilder().helper(() -> helper).build());
+        PACKET_CODECS.add(CodecUtil.rebuildCodec(packetCodec));
     }
 
     static {
+        addPacketCodec(Bedrock_v975.CODEC);
         addPacketCodec(Bedrock_v944.CODEC);
         addPacketCodec(Bedrock_v924.CODEC);
         addPacketCodec(Bedrock_v898.CODEC);

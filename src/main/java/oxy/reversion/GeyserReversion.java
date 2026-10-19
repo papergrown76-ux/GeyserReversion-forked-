@@ -18,6 +18,10 @@ import oxy.reversion.util.auth.PendingBedrockAuthentication;
 import oxy.reversion.util.protocol.CodecUtil;
 import oxy.reversion.util.transformers.BaseBedrockCodecHelperTransformer;
 import oxy.reversion.util.transformers.GeyserExtensionClassProvider;
+import oxy.reversion.util.transformers.OuranosItemTransformer;
+import oxy.reversion.util.transformers.OuranosCodecTransformer;
+import oxy.reversion.util.transformers.OuranosBlockDictionaryTransformer;
+import oxy.reversion.util.transformers.OuranosBlockStateTransformer;
 
 public class GeyserReversion implements Extension {
     private static ExtensionLogger LOGGER;
@@ -48,10 +52,14 @@ public class GeyserReversion implements Extension {
         try {
             TransformerManager transformerManager = new TransformerManager(new GeyserExtensionClassProvider());
             transformerManager.addTransformer(BaseBedrockCodecHelperTransformer.class.getName());
+            transformerManager.addTransformer(OuranosCodecTransformer.class.getName());
+            transformerManager.addTransformer(OuranosBlockStateTransformer.class.getName());
+            transformerManager.addTransformer(OuranosBlockDictionaryTransformer.class.getName());
+            transformerManager.addTransformer(OuranosItemTransformer.class.getName());
             transformerManager.hookInstrumentation(Agents.getInstrumentation());
         } catch (Exception e) {
             supportV575AndBelow = false;
-            throw new RuntimeException("Failed to hook into codec helper, any version below " + Bedrock_v575.CODEC.getMinecraftVersion() + " will not be supported!");
+            throw new RuntimeException("Failed to initialize protocol compatibility transformers", e);
         }
     }
 

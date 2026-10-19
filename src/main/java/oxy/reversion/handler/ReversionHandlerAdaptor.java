@@ -9,6 +9,7 @@ import org.cloudburstmc.protocol.bedrock.netty.codec.packet.BedrockPacketCodec;
 import org.cloudburstmc.protocol.bedrock.packet.BedrockPacket;
 import org.cloudburstmc.protocol.bedrock.packet.InventoryTransactionPacket;
 import org.cloudburstmc.protocol.bedrock.packet.ItemComponentPacket;
+import org.cloudburstmc.protocol.bedrock.packet.StartGamePacket;
 import oxy.reversion.user.ReversionUser;
 import oxy.reversion.util.protocol.PacketTranslatorUtil;
 import oxy.reversion.util.registry.RegistryUtil;
@@ -28,7 +29,9 @@ public class ReversionHandlerAdaptor extends MessageToMessageCodec<BedrockPacket
             return;
         }
 
-        if (msg.getPacket() instanceof ItemComponentPacket packet) {
+        if (msg.getPacket() instanceof StartGamePacket) {
+            RegistryUtil.onStartGame(user);
+        } else if (msg.getPacket() instanceof ItemComponentPacket packet) {
             RegistryUtil.onItemComponent(user, packet);
         }
 
